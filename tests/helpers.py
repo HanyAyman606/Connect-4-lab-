@@ -1,7 +1,7 @@
 from core.board import Board
 from core.disc import Disc, EMPTY_DISC
 from core.owner import Owner
-from core.player import Player
+from game.player import Player
 
 RED = Disc(Owner.HUMAN, "red")
 YELLOW = Disc(Owner.COMPUTER, "yellow")

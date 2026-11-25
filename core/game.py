@@ -8,7 +8,7 @@ from core.disc import Disc
 from core.owner import Owner
 
 if TYPE_CHECKING:
-    from core.player import Player
+    from game.player import Player
     from core.rules import Rules
 
 _OPPONENT = {Owner.HUMAN: Owner.COMPUTER, Owner.COMPUTER: Owner.HUMAN}
