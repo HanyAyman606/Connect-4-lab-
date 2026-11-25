@@ -154,7 +154,7 @@ class AlphaBetaSearcher:
                 #MIN already has a path that avoids this result,
                 # so the remaining columns cannot affect the final choice.
                 # They are recorded as pruned.
-                if value >= beta:
+                if value >= beta and index + 1 < len(columns):
                     pruned_columns.extend(columns[index + 1:])
                     stats.cutoffs += 1
                     stats.pruned_branches += len(columns) - index - 1
@@ -177,7 +177,7 @@ class AlphaBetaSearcher:
                 beta = min(beta, value)
 
                 #MAX already has a better option elsewhere, so the remaining columns can be pruned.
-                if value <= alpha:
+                if value <= alpha and index + 1 < len(columns):
                     pruned_columns.extend(columns[index + 1:])
                     stats.cutoffs += 1
                     stats.pruned_branches += len(columns) - index - 1

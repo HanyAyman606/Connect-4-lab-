@@ -1,11 +1,4 @@
-"""Console human-versus-computer game entry point.
-
-Run with ``python3 -m game.console_game``. The human always moves first, and the game
-continues until the board is full, as required by the assignment rules.
-"""
-
 from __future__ import annotations
-
 from game.ai_player import AIPlayer
 from algorithms.alpha_beta import AlphaBetaSearcher
 from heuristics.evaluation import DIFFICULTY_MODELS

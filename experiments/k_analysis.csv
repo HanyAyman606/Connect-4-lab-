@@ -1,0 +1,7 @@
+k,positions,heuristic,ordering,average_nodes_visited,average_nodes_expanded,average_pruned_branches,average_cutoffs,average_search_ms,median_search_ms
+1,20,windows,four_gain_center,8,1,0,0,0.5860032501914247,0.5666045008183573
+2,20,windows,four_gain_center,24.15,8,32.85,5.7,0.9831817497797601,0.9131214992521564
+3,20,windows,four_gain_center,101.4,25.75,79.85,14.05,4.106229650096793,3.9140270009738742
+4,20,windows,four_gain_center,279.55,99.55,418.3,73.2,10.739139599627379,9.512905498922919
+5,20,windows,four_gain_center,1010,294.55,1052.65,185.1,40.989331000128004,34.88193350040092
+6,20,windows,four_gain_center,2849.4,1039.3,4418.5,773.6,122.08778344993334,102.59812900039833

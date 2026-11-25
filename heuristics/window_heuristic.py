@@ -12,8 +12,8 @@ class HeuristicWeights:
 
     fours: float = 100.0                    #value for each completed four-cell window
     open_threes: float = 10.0               #value for each window with three of one player’s discs and one empty cell
-    open_twos: float = 3.0                  #value for each window with two of one player’s discs and two empty cells
-    center_control: float = 2.0             #value for each disc in a center column
+    open_twos: float = 5.0                  #GA-tuned weight for two discs and two empty cells
+    center_control: float = 10.0            #tuned weight for center-column discs
     normalization_scale: float = 1000.0     #controls the final score’s scale
 
     #checks that feature weights are finite and nonnegative, and that the normalization scale is positive
