@@ -1,9 +1,7 @@
-"""Public evaluation functions used by the search and diagnostic output."""
-
 from __future__ import annotations
 
 from core.board import Board
-from heuristics.window_heuristic import Heuristic, HeuristicBreakdown
+from heuristics.window_heuristic import Heuristic, HeuristicBreakdown, HeuristicWeights
 from heuristics.gravity_heuristic import (
     GravityAwareHeuristic,
     GravityHeuristicBreakdown,
@@ -15,8 +13,16 @@ from heuristics.opportunity_heuristic import (
 )
 
 
+BASELINE_HEURISTIC_WEIGHTS = HeuristicWeights(
+    fours=100.0,
+    open_threes=10.0,
+    open_twos=3.0,
+    center_control=2.0,
+    normalization_scale=1000.0,
+)
 DEFAULT_HEURISTIC = Heuristic()
-GRAVITY_AWARE_HEURISTIC = GravityAwareHeuristic()
+BASELINE_HEURISTIC = Heuristic(BASELINE_HEURISTIC_WEIGHTS)
+GRAVITY_AWARE_HEURISTIC = GravityAwareHeuristic(BASELINE_HEURISTIC_WEIGHTS)
 SCORING_OPPORTUNITY_HEURISTIC = ScoringOpportunityHeuristic()
 
 
@@ -27,6 +33,10 @@ def evaluate(board: Board) -> float:
 #Return the feature counts and scores behind the default evaluation.
 def explain_evaluation(board: Board) -> HeuristicBreakdown:
     return DEFAULT_HEURISTIC.breakdown(board)
+
+#Evaluate using the original untuned window weights for comparisons.
+def evaluate_baseline(board: Board) -> float:
+    return BASELINE_HEURISTIC(board)
 
 # Evaluate with candidate windows discounted by gravity support moves.
 def evaluate_gravity_aware(board: Board) -> float:
@@ -62,6 +72,7 @@ DIFFICULTY_MODELS = {
 
 __all__ = [
     "evaluate", "explain_evaluation",
+    "evaluate_baseline",
     "evaluate_gravity_aware", "explain_gravity_aware",
     "evaluate_scoring_opportunities", "explain_scoring_opportunities",
     "HEURISTIC_MODELS", "DIFFICULTY_MODELS",
