@@ -1,0 +1,559 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!50!black,
+  pdftitle={Assignment 2: Connect Four AI Agent},
+  pdfauthor={Connect Four Assignment Team}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Artificial Intelligence -- Assignment 2}
+\rhead{Connect Four AI Agent}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+\setlist[itemize]{leftmargin=*,itemsep=2pt,topsep=4pt}
+\setlist[enumerate]{leftmargin=*,itemsep=2pt,topsep=4pt}
+\renewcommand{\arraystretch}{1.15}
+
+\definecolor{codebg}{RGB}{246,247,249}
+\definecolor{codeframe}{RGB}{210,214,220}
+\lstdefinestyle{projectcode}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4
+}
+\lstset{style=projectcode}
+
+\title{\textbf{Assignment 2: Connect Four AI Agent}\\
+\large Minimax Search with Alpha--Beta Pruning}
+\author{Alexandria University\\
+Faculty of Engineering\\
+Computer and Systems Department\\[8pt]
+Student 1:Eyad Amr Asaad Abdo Saeed 23010312 \\
+Student 2:Hany Ayman Mahmoud 23010940 \\
+}
+\date{}
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+
+\tableofcontents
+\newpage
+
+\section{Assignment Requirements and Completion}
+
+The assignment requires a complete human-versus-computer game using Minimax
+with alpha--beta pruning, a search cutoff at a user-selected $K$, a heuristic
+that evaluates cutoff boards, and a readable tree printed after computer
+searches. The game must continue until the board is full. A GUI and GUI tree
+display are bonus features. The report is also a required deliverable and must
+include sample runs and trees, performance analysis at different $K$ values,
+algorithms, data structures, assumptions, and other relevant details.
+
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.25\textwidth}@{\hspace{5pt}}>{\raggedright\arraybackslash}p{0.12\textwidth}@{\hspace{5pt}}>{\raggedright\arraybackslash}p{0.57\textwidth}@{}}
+\toprule
+\textbf{Requirement} & \textbf{Status} & \textbf{Project implementation}\\
+\midrule
+Human plays against the computer & Complete & The console game and GUI provide a human-versus-AI match.\\
+Minimax with alpha--beta pruning & Complete & \texttt{algorithms/alpha\_beta.py} searches from the computer's perspective, with MAX representing the computer and MIN representing the human.\\
+Continue until the board is full & Complete & Four-in-a-row does not stop the match. Terminal state means the board is full. The final score counts all length-four windows for each owner.\\
+Board at least 7 columns by 6 rows & Complete & The default board is 7 columns by 6 rows; setup validation enforces those minimum dimensions.\\
+User-selected depth $K$ & Complete & The terminal runner prompts for $K$ before play. The GUI setup screen also collects search settings.\\
+Heuristic at cutoff depth & Complete & Three evaluators are available: scoring opportunities, gravity-aware windows, and weighted windows.\\
+Readable search tree printed to console & Complete & The console game prints the recorded alpha--beta tree on every computer turn, including leaf heuristic values, explored branches, bounds, and pruned columns.\\
+GUI bonus & Complete & A PySide6 multi-screen game is included.\\
+GUI tree bonus & Complete & The GUI includes a tree canvas, search playback, and alpha--beta trace and computation tables.\\
+Performance analysis at multiple $K$ & Complete & The reproducible analysis script and CSV contain measurements for $K=1$ through $K=6$.\\
+Written report & This document & Complete after student names and group information are filled in and the report is reviewed.\\
+\bottomrule
+\end{longtable}
+
+\section{Game Rules and Assumptions}
+
+\subsection{Board and turns}
+The default game uses 6 rows and 7 columns. A move selects a non-full column;
+the disc falls to its lowest empty cell. The board is rendered with \texttt{X}
+for the human, \texttt{O} for the computer, and \texttt{.} for an empty cell.
+Columns are displayed to users starting at 1. Internally, columns are indexed
+from 0.
+
+\subsection{Scoring and ending}
+The game does not end when a player first makes four in a row. Play continues
+until all 42 cells are occupied. Each contiguous horizontal, vertical, or
+diagonal window of exactly four same-owner discs contributes one point. Windows
+overlap independently: a run of five discs contains two connected-four windows.
+At the end, the computer utility is
+\[
+  U(s)=F_{\mathrm{computer}}(s)-F_{\mathrm{human}}(s),
+\]
+where $F$ counts all completed four-cell windows. A positive utility means a
+computer win, a negative utility means a human win, and zero is a draw.
+
+\subsection{Search assumptions}
+\begin{itemize}
+  \item The game is deterministic, two-player, zero-sum, and has perfect information.
+  \item The computer maximizes the utility and the human is modeled as minimizing it.
+  \item The same fixed perspective (computer minus human) is used at every node.
+  \item Search stops at depth $K$ or earlier if the board becomes full. A full-board
+        utility is exact and takes precedence over heuristic evaluation.
+  \item The current heuristic implementations evaluate connect-four windows and
+        therefore require a connect length of four.
+\end{itemize}
+
+\section{Software Architecture}
+
+The project separates game rules, search, evaluation, recording, setup, and user
+interfaces. The main dependency flow is:
+
+\begin{lstlisting}
+main.py
+  +-- ui/                 PySide6 application and screens (default)
+  +-- game/console_game.py Terminal game (--console)
+
+core/                     Board, discs, rules, game state
+algorithms/               Alpha-beta search and move ordering
+heuristics/               Three cutoff evaluators
+tree_essentials/           Search tree, recording, statistics, printing
+setup/ and options/        Settings validation and game construction
+experiments/               Reproducible comparisons and analysis
+tests/                     Unit tests
+\end{lstlisting}
+
+\subsection{Important packages and classes}
+\begin{description}[style=nextline,leftmargin=28mm]
+  \item[\texttt{core/board.py}] \texttt{Board} stores an immutable grid and
+  implements legal columns, landing rows, and disc drops.
+  \item[\texttt{core/disc.py}] \texttt{Disc} stores owner and display color.
+  Shared instances are reused for equal owner/color pairs.
+  \item[\texttt{core/rules.py}] \texttt{Rules} builds and stores all possible
+  connect-four windows and counts completed windows.
+  \item[\texttt{core/game.py}] \texttt{GameState} pairs a board with the side
+  to move. \texttt{Game} applies moves, alternates turns, checks full-board
+  termination, and calculates utility.
+  \item[\texttt{algorithms/alpha\_beta.py}] \texttt{AlphaBetaSearcher} runs
+  recursive depth-limited Minimax with alpha--beta pruning.
+  \item[\texttt{algorithms/ordering.py}] Composable ranking rules prioritize
+  tactically useful columns and improve pruning efficiency.
+  \item[\texttt{heuristics/}] The evaluator implementations and weight data
+  structures are described in Section~\ref{sec:heuristics}.
+  \item[\texttt{tree\_essentials/node.py}] \texttt{TreeNode} stores a search
+  position's role, depth, value, alpha/beta window, child nodes, best column,
+  and pruned columns.
+  \item[\texttt{tree\_essentials/search\_recorder.py}] A recorder interface
+  separates the search algorithm from output. \texttt{TreeRecorder} stores a
+  tree; \texttt{NullRecorder} avoids tree-storage overhead during experiments.
+  \item[\texttt{tree\_essentials/search\_stats.py}] \texttt{SearchStats}
+  tracks visited and expanded nodes, heuristic evaluations, terminal leaves,
+  cutoffs, pruned branches, maximum depth, and elapsed time.
+  \item[\texttt{tree\_essentials/tree\_printer.py}] \texttt{TreePrinter}
+  formats search results and trees for console output or export.
+  \item[\texttt{setup/}] Settings validation, player construction, session
+  creation, and turn history.
+  \item[\texttt{ui/}] PySide6 menu, setup, battle, results, archive, tree
+  visualization, and alpha--beta playback/trace views.
+\end{description}
+
+\section{Minimax with Alpha--Beta Pruning}
+
+At each node the search generates legal columns, orders them, applies each
+candidate move, and searches the resulting state. At a MAX node it retains the
+largest child value and updates $\alpha$. At a MIN node it retains the smallest
+child value and updates $\beta$. A branch is skipped when $\alpha\geq\beta$;
+the skipped columns are saved in the recorded tree.
+
+\begin{lstlisting}
+ALPHA_BETA(state, depth, alpha, beta, role):
+    if board is full:
+        return exact final utility
+    if depth == K:
+        return heuristic(board)
+    if role == MAX:
+        value = -infinity
+        for move in ordered_legal_moves(state):
+            value = max(value, ALPHA_BETA(child(move), depth+1,
+                                         alpha, beta, MIN))
+            alpha = max(alpha, value)
+            if alpha >= beta: record skipped moves; break
+    else:
+        value = +infinity
+        for move in ordered_legal_moves(state):
+            value = min(value, ALPHA_BETA(child(move), depth+1,
+                                         alpha, beta, MAX))
+            beta = min(beta, value)
+            if beta <= alpha: record skipped moves; break
+    return value
+\end{lstlisting}
+
+The search records whether node values are exact or bounds when pruning means
+that a node was not fully explored. Alpha and beta are stored on internal tree
+nodes. At each computer turn the AI performs a new search and plays the best
+root column. The tree recorder is enabled for the game. The analysis program
+disables recording to avoid including its time and memory cost in performance
+measurements.
+
+\subsection{Move ordering}
+Move ordering affects which branch is searched first and therefore how much
+alpha--beta pruning occurs; it does not change the Minimax result. The default
+order is \texttt{four\_gain\_center}: first prioritize moves that create more
+completed fours, then prefer columns closer to the center. Other implemented
+choices include center-first, threat-first with center tie-breaking, a combined
+tactical order, and left-to-right order. The tactical ordering estimates
+immediate four gains and opponent reply opportunities.
+
+\section{Heuristic Evaluators}\label{sec:heuristics}
+
+All evaluators return a score from the computer's perspective. For raw feature
+score $r$, the shared normalization is
+\[
+  N(r)=\frac{r}{1000+|r|},
+\]
+which preserves score ordering and maps finite raw values into $(-1,1)$.
+
+\subsection{Weighted windows (Hard)}
+For each four-cell window, the evaluator ignores windows containing both
+players' discs. It counts completed fours, open threes (three discs and one
+empty cell), open twos (two discs and two empty cells), and center-column
+discs. For the current default weights,
+\[
+ r_{\mathrm{windows}}=
+ 100\Delta F + 10\Delta O_3 + 5\Delta O_2 + 10\Delta C,
+\]
+where each $\Delta$ is the computer's count minus the human's count. On a
+seven-column board the center feature counts the central column. This is the
+current Hard evaluator and is also the default evaluator in the GUI.
+
+\subsection{Gravity-aware windows (Intermediate)}
+This evaluator uses the same types of windows but discounts open threes and
+twos whose empty target cells have empty cells beneath them. Such cells must be
+filled before a disc can land at a target. If $s$ distinct support cells are
+needed, that feature contributes $0.5^s$ instead of a full count. Completed
+fours are not discounted. It currently uses the baseline weights
+$(100,10,3,2)$ for fours, open threes, open twos, and center discs.
+
+\subsection{Scoring opportunities (Easy)}
+For each player and each currently playable column, the evaluator finds the
+landing cell and checks only the four-cell windows containing that cell. If
+the other three cells in a window already belong to that player, playing the
+column would complete a four. It counts (1) columns with at least one such
+gain, (2) the largest gain in any one column, and (3) the total gain across
+columns. With the default parameters,
+\[
+ r_{\mathrm{opportunities}}=
+ 100\Delta F + 20\Delta M + 15\Delta G_{\max}
+ + 5\Delta G_{\mathrm{total}} + 2\Delta C.
+\]
+This model focuses on immediate scoring options rather than valuing all open
+patterns.
+
+\subsection{Heuristic difficulty models}
+The console difficulty selector maps Easy to scoring opportunities,
+Intermediate to gravity-aware windows, and Hard to the weighted-window model.
+The GUI presents the evaluators through its three AI profiles. Difficulty
+labels describe the intended model order, not a guarantee of win rate against
+every person or at every value of $K$.
+
+\section{Weight Tuning and Heuristic Comparison}
+
+The weighted-window evaluator's four weight remains 100 and the open-three
+weight remains 10. Earlier hill-climbing and genetic-algorithm experiments
+compared the candidate weights against the original baseline evaluator.
+The genetic candidate $(100,10,5,6)$ performed better overall than the
+hill-climbing candidate $(100,10,2,4)$ on the recorded validation set. The
+center-control weight reached the top of the original search range, so a
+follow-up sweep tested center weights from 0 through 20 while holding open
+threes at 10 and open twos at 5.
+
+The focused validation compared center weights 6, 10, 14, 16, and 18 against
+the original baseline, with 64 games per candidate at each search depth. The
+table gives each candidate's average final score margin (candidate score
+minus baseline score), with positive values favoring the candidate.
+
+\begin{table}[ht]
+\centering
+\caption{Center-weight validation. Open-three weight = 10; open-two weight = 5.}
+\begin{tabular}{crrrr}
+\toprule
+Center weight & $K=2$ & $K=3$ & $K=4$ & Mean over $K$\\
+\midrule
+6  & +0.344 & +0.750 & +0.469 & +0.521\\
+10 & +0.500 & +0.563 & +1.156 & +0.740\\
+14 & +0.594 & +0.438 & +1.000 & +0.677\\
+16 & +0.406 & +0.000 & +0.750 & +0.385\\
+18 & +0.406 & +0.000 & +0.719 & +0.375\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The selected center weight is 10 because it had the highest mean margin over
+the three tested depths. The depth-specific winner differs, which shows that
+weight quality depends partly on search depth and test positions. These are
+empirical self-play comparisons against the original evaluator, not direct
+measurements of difficulty against human players. The complete CSV records are
+\texttt{experiments/heuristic\_tuning.csv},
+\texttt{experiments/center\_weight\_tuning.csv}, and
+\texttt{experiments/center\_weight\_validation.csv}.
+
+\section{Search-Cost Experiment}
+
+The analysis script uses the same reproducible positions at every tested
+depth. The final saved run uses 20 positions generated from legal random
+openings of five plies, seed 20261125, the current window evaluator with
+weights $(100,10,5,10)$, and the four-gain-center ordering. Tree recording is
+off during timing. Values below
+are means over the 20 positions; timings are machine- and runtime-dependent.
+
+\begin{table}[ht]
+\centering
+\caption{Alpha--beta work and timing on the saved 20-position run.}
+\begin{tabular}{rrrrrr}
+\toprule
+$K$ & Visited & Expanded & Pruned branches & Mean time (ms) & Median time (ms)\\
+\midrule
+1 & 8.0 & 1.0 & 0.0 & 1.096 & 1.076\\
+2 & 21.6 & 8.0 & 35.4 & 1.578 & 1.493\\
+3 & 85.4 & 23.6 & 80.8 & 5.375 & 4.301\\
+4 & 218.8 & 87.0 & 391.6 & 9.348 & 9.103\\
+5 & 760.0 & 232.6 & 869.0 & 32.618 & 30.515\\
+6 & 1878.1 & 755.6 & 3404.4 & 73.005 & 69.226\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The measurements show the expected increase in work as $K$ grows, despite
+pruning. The large pruned-branch count is the number of legal child moves
+skipped at cutoffs, summed across the search; it is not the number of nodes
+that were visited. Search times are averages over small searches from
+mid-opening positions and should not be interpreted as a worst-case latency
+for every turn.
+
+The final results are saved in \texttt{k\_analysis\_final.csv} in the
+\texttt{experiments} directory. The earlier K-analysis file predates the
+final center weight and is retained as a historical run. The experiment can
+be repeated with:
+\begin{lstlisting}
+python -m experiments.k_analysis \
+  --ks 1 2 3 4 5 6 --positions 20 --opening-plies 5 \
+  --csv experiments/k_analysis_final.csv
+\end{lstlisting}
+
+\section{Representative Sample Run and Search Tree}
+
+The following trace is generated by the actual alpha--beta implementation from
+a fixed legal opening. It uses the tuned weighted-window evaluator, default
+four-gain-center ordering, and $K=2$. The opening is: human column 1, computer
+column 7, human column 2, computer column 7, human column 3. The computer then
+searches from the resulting position. Column labels in the tree are zero-based,
+as in the implementation; the chosen internal column 3 is the user's column 4.
+
+\begin{lstlisting}
+Search result
+  algorithm : alpha-beta
+  K         : 2
+  best col  : 3
+  value     : +0.0050
+  visited   : 21   expanded: 8   evaluations: 13
+  cutoffs   : 6   pruned branches: 36
+  time      : approximately 0.0010 s
+
+ROOT [MAX] value=+0.0050 (a=-inf, b=+inf)
+|-- * col 3 [MIN] value=+0.0050 (a=-inf, b=+inf)
+|   |-- * col 3 LEAF eval=+0.0050
+|   |-- col 2 LEAF eval=+0.0099
+|   |-- col 4 LEAF eval=+0.0148
+|   |-- col 1 LEAF eval=+0.0099
+|   |-- col 5 LEAF eval=+0.0148
+|   |-- col 0 LEAF eval=+0.0148
+|   \-- col 6 LEAF eval=+0.0148
+|-- col 2 [MIN] value<=-0.1071 (a=+0.0050, b=+inf)
+|   |-- * col 3 LEAF eval=-0.1071
+|   \-- x pruned columns: 2, 4, 1, 5, 0, 6
+|-- col 4 [MIN] value<=-0.0950 (a=+0.0050, b=+inf)
+|   |-- * col 3 LEAF eval=-0.0950
+|   \-- x pruned columns: 2, 4, 1, 5, 0, 6
+|-- col 1 [MIN] value<=-0.1071 (a=+0.0050, b=+inf)
+|   |-- * col 3 LEAF eval=-0.1071
+|   \-- x pruned columns: 2, 4, 1, 5, 0, 6
+|-- col 5 [MIN] value<=-0.1031 (a=+0.0050, b=+inf)
+|   |-- * col 3 LEAF eval=-0.1031
+|   \-- x pruned columns: 2, 4, 1, 5, 0, 6
+|-- col 0 [MIN] value<=-0.1071 (a=+0.0050, b=+inf)
+|   |-- * col 3 LEAF eval=-0.1071
+|   \-- x pruned columns: 2, 4, 1, 5, 0, 6
+\-- col 6 [MIN] value<=-0.0991 (a=+0.0050, b=+inf)
+    |-- * col 3 LEAF eval=-0.0991
+    \-- x pruned columns: 2, 4, 1, 5, 0, 6
+\end{lstlisting}
+
+The root is MAX, so the computer chooses the child with the greatest backed-up
+value. Each MIN child represents a possible human reply. For the first
+computer candidate, all seven replies were evaluated. For later candidates,
+the first human reply was already sufficient to prove an upper bound no better
+than the root's current alpha; the other six replies were pruned. Thus the
+reported tree contains all visited nodes and explicitly lists skipped moves.
+The standalone console printer normally formats values to two decimals. The
+sample above shows four decimal places so that small early-game heuristic
+differences are visible; the GUI's detailed trace also displays four decimals
+and raw feature scores.
+
+\subsection{Interpreting a leaf value}
+For example, the leaf value $-0.1071$ is an estimate from the computer's
+perspective. Its negative sign means the heuristic considers that cutoff board
+favorable to the human. It is not a guaranteed final score: the board is not
+full, and the search stopped at depth $K=2$.
+
+\section{Graphical Interface and Additional Features}
+
+The GUI is launched by default from \texttt{main.py}. It includes a themed
+main menu, story and map navigation, opponent/difficulty selection, match
+configuration, a battle screen, a result summary, and an archive for
+experiments and analysis. The search runs in a background Qt worker so that
+the interface can remain responsive while the AI searches.
+
+The tree view displays MAX/MIN nodes, backed-up values, alpha/beta bounds,
+chosen moves, and pruned branches. It supports expansion, selection, zoom and
+pan, and step-by-step playback. The trace tools derive a visiting-order
+alpha--beta table and a bottom-up Minimax computation table from the recorded
+tree. Evaluator inspection exposes component features, normalized values,
+and raw weighted scores.
+
+The GUI trace is enabled by default and has a visible control. For the
+assignment's guaranteed full console tree on every AI move, use the terminal
+mode described in Section~\ref{sec:run}. GUI console reports are intentionally
+bounded in line count on large searches; the interactive GUI tree is the place
+to inspect the recorded tree in detail.
+
+\section{How to Open, Install, and Run}\label{sec:run}
+
+\subsection{Open the project}
+Open the project root in an IDE such as VS Code or PyCharm, or open a terminal
+there. The project root is the directory containing \texttt{main.py},
+\texttt{README.md}, \texttt{requirements.txt}, and the package directories.
+Commands below assume the current directory is the project root.
+
+\subsection{Linux or macOS}
+Python 3.10 or newer is recommended. PySide6 is installed from the project's
+requirements file.
+\begin{lstlisting}
+cd /path/to/Connect-4
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+\end{lstlisting}
+
+Launch the GUI or terminal game:
+\begin{lstlisting}
+python main.py                 # GUI (default)
+python main.py --console       # Terminal human-versus-computer game
+\end{lstlisting}
+
+The console game asks for a positive integer $K$ and an AI difficulty. Enter a
+column from 1 through 7 when prompted. The search tree is printed after each
+computer search. The game ends only after the board is full.
+
+\subsection{Windows}
+From PowerShell in the project root:
+\begin{lstlisting}
+py -m venv .venv
+.venv\\Scripts\\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python main.py
+python main.py --console
+\end{lstlisting}
+
+If PowerShell blocks activation, the virtual environment's interpreter can be
+called directly as \texttt{.venv\\Scripts\\python.exe}.
+
+\subsection{Tests and experiments}
+Run the full test suite from the project root with the virtual environment
+active:
+\begin{lstlisting}
+python -m unittest discover tests
+\end{lstlisting}
+The verified project run reports 142 tests passing. To repeat the search cost
+analysis, compare heuristics and orderings, or run weight tuning:
+\begin{lstlisting}
+python -m experiments.k_analysis --ks 1 2 3 4 5 6 \
+  --positions 20 --opening-plies 5
+
+python -m experiments.compare_heuristics \
+  --mode all --ks 2 3 4 --rounds 10 \
+  --csv experiments/results.csv
+
+python -m experiments.tune_heuristic \
+  --budget 12 --rounds 1 --validation-rounds 5
+\end{lstlisting}
+Experiment output is written to CSV files in \texttt{experiments/}.
+
+To compile this report from the project root, run LaTeX twice so the table of
+contents and page references are updated:
+\begin{lstlisting}
+pdflatex -interaction=nonstopmode -output-directory=report \
+  report/assignment2_report.tex
+pdflatex -interaction=nonstopmode -output-directory=report \
+  report/assignment2_report.tex
+\end{lstlisting}
+
+\section{Conclusion}
+
+The project implements the assignment's complete game loop and required
+alpha--beta search, heuristic cutoff, configurable depth, and console search
+tree. It also includes three heuristic models, move-ordering alternatives,
+search and tuning experiments, a graphical game, and a GUI search-tree/trace
+viewer. The saved measurements demonstrate the cost increase as search depth
+grows and provide reproducible evidence for the current evaluator weights.
+Before submission, fill in student and group details, verify the final
+repository state, and make sure this report's experimental files correspond to
+the submitted code.
+
+\appendix
+\section{Project File Map}
+\begin{lstlisting}
+main.py                       Application entry point
+core/                         Board, discs, rules, game state
+algorithms/                   Alpha-beta search and move ordering
+heuristics/                   Window, gravity, opportunity evaluators
+tree_essentials/              Tree nodes, recorder, printer, statistics
+game/                         Human/AI players and console game
+options/                      Board/search/color/first-player options
+setup/                        Settings, validation, player factory, session
+ui/                           PySide6 screens, tree canvas, trace playback
+assets/                       GUI artwork and extracted image assets
+experiments/                  Comparisons, tuning, K-analysis scripts and CSVs
+tests/                        Unit tests and fixed-tree fixtures
+requirements.txt              Python runtime dependency list
+README.md                     Project overview and quick-start guide
+report/assignment2_report.tex This report source
+report/assignment2_report.pdf Compiled reading copy of this report
+experiments/k_analysis_final.csv Current-weight K-cost measurements
+\end{lstlisting}
+\end{enumerate}
+
+\end{document}

@@ -660,7 +660,7 @@ class MindPanel(QWidget):
         self._tab_buttons: list[QPushButton] = []
         tab_titles = (
             "1 · △/▽ Tree Diagram",
-            "2 · Sheet-6 α-β Table",
+            "2 · Alpha-Beta Table",
             "3 · State && Eval",
             "4 · Stats",
             "5 · Console Trace",

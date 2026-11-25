@@ -132,9 +132,8 @@ DEVILS: tuple[DevilProfile, ...] = (
         heuristic_title="Gravity-Aware Heuristic",
         heuristic_formula="eval = raw / (1000 + |raw|),  candidate windows weighted by 0.5^(support moves below)",
         heuristic_summary=(
-            "A patient spider queen who understands gravity: she scores open threes "
-            "and twos across all 69 windows, but discounts floating threats by 0.5^s "
-            "for every empty support cell underneath that must be filled first."
+            "Mora is a patient guardian of the Mouldwood Depths, watching the board "
+            "carefully and waiting for the right moment to strike."
         ),
         features=(
             HeuristicFeatureSpec("Completed Fours", "100.0", "All 4 cells owned in any of the 69 windows"),
@@ -159,12 +158,11 @@ DEVILS: tuple[DevilProfile, ...] = (
         region_name="Silent Spire",
         difficulty_label="Level III · Sister's Captor (Hard / Final Boss)",
         heuristic_key="windows",
-        heuristic_title="Full 69-Window GA-Tuned Heuristic",
+        heuristic_title="Full 69-Window Heuristic",
         heuristic_formula="eval = raw / (1000 + |raw|),  raw = 100·ΔFours + 10·ΔOpen3 + 5·ΔOpen2 + 10·ΔCenter",
         heuristic_summary=(
-            "The apex sovereign who took your sister's soul. Tuned via Hill Climbing, "
-            "Genetic Algorithm & 64-game K=4 validation (42W–18D–4L): scans all 69 windows "
-            "with boosted open-two (5.0) and center-dominance (10.0) weights."
+            "Shriek rules the Silent Spire from above, studying every move and "
+            "turning small mistakes into dangerous threats."
         ),
         features=(
             HeuristicFeatureSpec("Completed Fours", "100.0", "Locked 4-disc lines (including overlapping 5- and 6-in-a-row)"),

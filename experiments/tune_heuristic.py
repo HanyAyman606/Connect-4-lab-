@@ -1,13 +1,8 @@
-"""Tune window-heuristic weights with hill climbing and a genetic algorithm.
 
-Both methods optimize three feature weights while keeping the completed-four
-weight fixed at 100. They play against the original untuned window heuristic
-at the same K, move ordering, seeds, and opening lengths. A separate higher-budget
-validation compares the best candidate from each method with the baseline.
-
-Example:
+"""
     python -m experiments.tune_heuristic --budget 12 --rounds 1 --validation-rounds 5
 """
+
 
 from __future__ import annotations
 
@@ -32,10 +27,9 @@ WEIGHT_GRIDS = (
 )
 BASE_WEIGHTS: WeightVector = (10.0, 3.0, 2.0)
 
-
+#Balanced head-to-head results for one weight vector.
 @dataclass(frozen=True, slots=True)
 class Fitness:
-    """Balanced head-to-head results for one weight vector."""
 
     wins: int
     draws: int
@@ -48,8 +42,8 @@ class Fitness:
         return self.margin_sum / self.games if self.games else 0.0
 
 
+#Create the window evaluator represented by the three tuned weights.
 def evaluator_for(weights: WeightVector) -> Heuristic:
-    """Create the window evaluator represented by the three tuned weights."""
     open_threes, open_twos, center_control = weights
     return Heuristic(HeuristicWeights(
         fours=100.0,
@@ -60,9 +54,9 @@ def evaluator_for(weights: WeightVector) -> Heuristic:
     ))
 
 
+#Measure a candidate against baseline on the same seeded openings.
 def evaluate_weights(weights: WeightVector, k: int, rounds: int,
                      seeds: tuple[int, ...]) -> Fitness:
-    """Measure a candidate against baseline on the same seeded openings."""
     candidate = AgentConfig(
         "candidate", evaluator_for(weights), four_gain_center_first,
     )
@@ -94,9 +88,9 @@ def _neighbors(weights: WeightVector) -> list[WeightVector]:
     return neighbors
 
 
+#Run bounded random-restart hill climbing from the default weights.
 def hill_climb(budget: int, rng: random.Random,
                score) -> tuple[WeightVector, Fitness, list[tuple[WeightVector, Fitness]]]:
-    """Run bounded random-restart hill climbing from the default weights."""
     evaluated: dict[WeightVector, Fitness] = {}
     history = []
 
@@ -142,10 +136,9 @@ def hill_climb(budget: int, rng: random.Random,
     )
     return best_weights, best_fitness, history
 
-
+#Run a small genetic algorithm over discrete weight ranges.
 def genetic_search(budget: int, population_size: int, rng: random.Random,
                    score) -> tuple[WeightVector, Fitness, list[tuple[WeightVector, Fitness]]]:
-    """Run a small genetic algorithm over discrete weight ranges."""
     population_size = min(population_size, budget)
     population = [BASE_WEIGHTS]
     while len(population) < population_size:
