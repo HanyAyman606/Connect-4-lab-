@@ -1,0 +1,2 @@
+experiment,k,rounds,opening_plies,seed,agent_a,agent_b,games,wins_a,draws,wins_b,average_score_margin_a,average_nodes_per_search_a,average_nodes_per_search_b,average_pruned_branches_per_search_a,average_pruned_branches_per_search_b,average_cutoffs_per_search_a,average_cutoffs_per_search_b,average_search_ms_a,average_search_ms_b
+heuristics/four_gain_center,4,5,4,20261125,windows,nonlinear_window,20,14,6,0,1.6,234.82631578947368,294.09473684210525,236.78947368421052,238.0157894736842,51.76842105263158,56.43157894736842,9.120457418114375,20.07963912623573
