@@ -32,3 +32,10 @@ dist/
 # Operating-system files
 .DS_Store
 Thumbs.db
+
+# Large raw video files (exceed GitHub 100 MB limit)
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm

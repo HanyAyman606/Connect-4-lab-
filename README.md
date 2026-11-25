@@ -85,7 +85,7 @@ The board must be at least **7 columns wide and 6 rows long**. Any acceptable fi
 
 ## Our approach
 
-**Language:** Python (GUI with pygame).
+**Language:** Python (GUI with PySide6).
 
 **Scoring.** At a full board the exact result (the *utility*) is the computer's number of fours minus the human's. Every window of 4 cells counts, so overlapping fours count separately (5 in a row = 2 fours).
 
@@ -102,42 +102,49 @@ The board must be at least **7 columns wide and 6 rows long**. Any acceptable fi
 
 **Move ordering.** Center columns are tried first to improve pruning.
 
-**Bonus targets:** GUI (Brawlhalla-inspired, original art), tree shown in the GUI, and a tuned heuristic.
+**Bonus targets:** Dark-myth PySide6 GUI (*Connect 4: vs The Devils*), interactive 2D $\triangle$/$\triangledown$ Minimax tree with step-by-step $\alpha\text{-}\beta$ playback & Sheet-6 trace tables, and self-play tuned heuristics.
 
 ## Project structure
 
 ```
-connect4/
-├── core/            Game world: board, discs, players, rules, game interface
-├── options/         Configuration data: board size, connect length, color options
-├── setup/           Builds a ready game from the start-screen choices
-├── ui/              Theme, screens, animation, tree panel
-├── algorithms/      Alpha-beta search, heuristics, move ordering, tree, tuning
-├── experiments/     Scripts for the report (time and nodes per K, tournaments)
-├── tests/           Unit tests
-├── docs/            Report, sample trees, tables
-├── main.py          Entry point
+connect_four/
+├── core/             Game world: immutable Disc, Board, 69-window Rules, Game
+├── algorithms/       Minimax with Alpha-Beta pruning & composable move ordering
+├── heuristics/       Three candidate evaluators (Opportunities, Gravity, GA-Tuned Windows)
+├── tree_essentials/  TreeNode, SearchRecorder, SearchStats, SearchResult, TreePrinter
+├── game/             Player hierarchy, AIPlayer, and terminal console runner
+├── options/          Board dimensions, connect length, colors, first player, K limits
+├── setup/            SessionSettings validation, player factory, and GameSession builder
+├── ui/               PySide6 GUI, 2D △/▽ Minimax tree canvas, playback & Sheet-6 tables
+├── assets/           Scene artwork and extracted carved-board & orb sprites
+├── experiments/      k_analysis, compare_heuristics, tune_heuristic & CSV benchmarks
+├── tests/            Unit test suite (142 tests)
+├── main.py           Main entry point (GUI by default, --console for terminal)
+├── requirements.txt  Python package dependencies
 └── README.md
 ```
 
-**Dependency rules:** `core` depends on nothing; `algorithms` depends only on `core`; `ui` depends on `core` and the tree data classes; `setup` wires the pieces together.
+**Dependency rules:** `core` depends on nothing; `tree_essentials` depends only on `core`; `algorithms` and `heuristics` depend on `core` and `tree_essentials`; `ui` renders `core`, `heuristics`, and `tree_essentials` data; `setup` wires sessions together.
 
 ## Getting started
 
-*(Commands may change while the project is in development.)*
-
 ```bash
-git clone <repository-url>
-cd connect4
+git clone https://github.com/HanyAyman606/Connect-4-lab-.git
+cd Connect-4-lab-
 pip install -r requirements.txt
 
-# Play (asks for K before starting)
+# Launch Graphical User Interface (default)
 python main.py
 
-# Time and nodes per K
-python -m experiments.k_analysis
+# Launch Console Interface
+python main.py --console
 
-# Tests
+# Experiments for the report
+python -m experiments.k_analysis
+python -m experiments.compare_heuristics --mode all --ks 2 3 4
+python -m experiments.tune_heuristic
+
+# Run full unit test suite (142 tests)
 python -m unittest discover tests
 ```
 
@@ -151,12 +158,12 @@ python -m unittest discover tests
 
 ## Progress
 
-- [ ] Board and rules
-- [ ] Alpha-beta search with depth K
-- [ ] Heuristic evaluation
-- [ ] Console tree printing (with heuristic values)
-- [ ] Time and nodes analysis for different K
-- [ ] GUI
-- [ ] Tree shown in the GUI
-- [ ] Heuristic tuning
+- [x] Board and rules
+- [x] Alpha-beta search with depth K
+- [x] Heuristic evaluation
+- [x] Console tree printing (with heuristic values)
+- [x] Time and nodes analysis for different K
+- [x] GUI
+- [x] Tree shown in the GUI
+- [x] Heuristic tuning
 - [ ] Report
