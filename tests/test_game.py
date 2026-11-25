@@ -3,7 +3,7 @@ import unittest
 from core.board import Board
 from core.game import Game, GameState
 from core.owner import Owner
-from core.player import Player
+from game.player import Player
 from core.rules import Rules
 from helpers import RED, YELLOW, ScriptedPlayer, board_from
 

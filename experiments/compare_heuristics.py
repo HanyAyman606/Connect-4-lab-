@@ -22,7 +22,7 @@ from typing import Callable, Optional
 from heuristics.evaluation import (
     evaluate,
     evaluate_gravity_aware,
-    evaluate_nonlinear_window,
+    evaluate_scoring_opportunities,
 )
 from algorithms.alpha_beta import AlphaBetaSearcher
 from algorithms.ordering import (
@@ -35,7 +35,7 @@ from core.disc import Disc
 from core.board import Board
 from core.game import Game, GameState
 from core.owner import Owner
-from core.player import Player
+from game.player import Player
 from core.rules import Rules
 
 
@@ -110,7 +110,7 @@ class _DemoPlayer(Player):
 HEURISTICS = {
     "windows": evaluate,
     "gravity": evaluate_gravity_aware,
-    "nonlinear_window": evaluate_nonlinear_window,
+    "opportunities": evaluate_scoring_opportunities,
 }
 ORDERINGS = {
     "center": center_first,
