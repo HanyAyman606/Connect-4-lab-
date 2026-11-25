@@ -9,12 +9,15 @@ from heuristics.gravity_heuristic import (
     GravityHeuristicBreakdown,
 )
 
-from heuristics.nonlinear_window_heuristic import NonlinearWindowHeuristic
+from heuristics.opportunity_heuristic import (
+    OpportunityHeuristicBreakdown,
+    ScoringOpportunityHeuristic,
+)
 
 
 DEFAULT_HEURISTIC = Heuristic()
 GRAVITY_AWARE_HEURISTIC = GravityAwareHeuristic()
-NONLINEAR_WINDOW_HEURISTIC = NonlinearWindowHeuristic()
+SCORING_OPPORTUNITY_HEURISTIC = ScoringOpportunityHeuristic()
 
 
 #Evaluate a cutoff board with the default weighted heuristic.
@@ -25,19 +28,44 @@ def evaluate(board: Board) -> float:
 def explain_evaluation(board: Board) -> HeuristicBreakdown:
     return DEFAULT_HEURISTIC.breakdown(board)
 
-
+# Evaluate with candidate windows discounted by gravity support moves.
 def evaluate_gravity_aware(board: Board) -> float:
-    """Evaluate with candidate windows discounted by gravity support moves."""
     return GRAVITY_AWARE_HEURISTIC(board)
 
-
+#Return the gravity-aware feature breakdown for a board.
 def explain_gravity_aware(board: Board) -> GravityHeuristicBreakdown:
-    """Return the gravity-aware feature breakdown for a board."""
     return GRAVITY_AWARE_HEURISTIC.breakdown(board)
 
-def evaluate_nonlinear_window(board: Board) -> float:
-    """Evaluate with nonlinear window growth and gravity accessibility."""
-    return NONLINEAR_WINDOW_HEURISTIC(board)
+#Evaluate current fours and legal moves that immediately add fours.
+def evaluate_scoring_opportunities(board: Board) -> float:
+    return SCORING_OPPORTUNITY_HEURISTIC(board)
+
+
+#  Return current-score and immediate-scoring-option features.
+def explain_scoring_opportunities(board: Board) -> OpportunityHeuristicBreakdown:
+    return SCORING_OPPORTUNITY_HEURISTIC.breakdown(board)
+
+
+HEURISTIC_MODELS = {
+    "windows": evaluate,
+    "gravity": evaluate_gravity_aware,
+    "opportunities": evaluate_scoring_opportunities,
+}
+
+
+DIFFICULTY_MODELS = {
+    "easy": evaluate_scoring_opportunities,
+    "intermediate": evaluate_gravity_aware,
+    "hard": evaluate,
+}
+
+
+__all__ = [
+    "evaluate", "explain_evaluation",
+    "evaluate_gravity_aware", "explain_gravity_aware",
+    "evaluate_scoring_opportunities", "explain_scoring_opportunities",
+    "HEURISTIC_MODELS", "DIFFICULTY_MODELS",
+]
 
 
 
