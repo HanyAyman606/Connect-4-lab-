@@ -12,7 +12,7 @@ from typing import Callable, Optional
 from core.board import Board
 from core.game import Game, GameState
 from core.owner import Owner
-from algorithms.ordering import MoveOrderer, tactical_center_first
+from algorithms.ordering import MoveOrderer, four_gain_center_first
 from tree_essentials import (
     LeafKind,
     Role,
@@ -26,7 +26,7 @@ Evaluator = Callable[[Board], float]
 
 class AlphaBetaSearcher:
 
-    def __init__(self, evaluator: Evaluator,    move_orderer: MoveOrderer = tactical_center_first) -> None:
+    def __init__(self, evaluator: Evaluator,move_orderer: MoveOrderer = four_gain_center_first) -> None:
         if not callable(evaluator):
             raise TypeError("evaluator must be callable")
         if not callable(move_orderer):
@@ -183,7 +183,7 @@ class AlphaBetaSearcher:
                     stats.pruned_branches += len(columns) - index - 1
                     break
 
-        #After exploring or pruning, recorder.exit(...) saves the chosen value, best column, and pruned columns
+        #After exploring or pruning, recorder.exit(...) saves the chosen value, the best column, and pruned columns
         recorder.exit(node, value, best_column, pruned_columns)
 
         #The method returns the value and best column to its parent

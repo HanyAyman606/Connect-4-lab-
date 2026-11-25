@@ -7,9 +7,11 @@ immediate four-making options, then prefers central columns.
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Callable, Iterable, Tuple
 
 from core.game import Game, GameState
+from core.rules import build_windows
 
 #An ordering rule looks at one candidate column and returns its priority key.
 OrderingRule = Callable[[Game, GameState, int], tuple]
@@ -44,11 +46,8 @@ def combine_orderings(*rules: OrderingRule) -> MoveOrderer:
 #if the player whose turn it is drops in this column, how many new fours do they create?
 def four_gain_first(game: Game, state: GameState, column: int) -> tuple:
 
-    #It counts that player’s fours before and after the hypothetical move and subtracts the counts
     mover = game.to_move(state)
-    before = game.fours(state, mover)
-    after_state = game.result(state, column)
-    gained = game.fours(after_state, mover) - before
+    gained = _four_gain(state.board, column, mover, game.rules.connect_length)
 
     # Sorting is ascending, so negate the gain to put larger gains first.
     return (-gained,)
@@ -60,11 +59,10 @@ def fewer_opponent_four_chances(game: Game, state: GameState,column: int) -> tup
     # It counts how many of those replies would increase the opponent’s four count. A smaller count sorts first.
     after_our_move = game.result(state, column)
     opponent = after_our_move.turn
-    current_fours = game.fours(after_our_move, opponent)
     opportunities = 0
     for reply in game.actions(after_our_move):
-        after_reply = game.result(after_our_move, reply)
-        if game.fours(after_reply, opponent) > current_fours:
+        if _four_gain(after_our_move.board, reply, opponent,
+                      game.rules.connect_length) > 0:
             opportunities += 1
     return (opportunities,)
 
@@ -78,11 +76,23 @@ def center_preference(game: Game, state: GameState, column: int) -> tuple:
     center = (width - 1) / 2
 
     #The first value prefers the closest column; the second breaks ties toward the smaller column number.
-    return (abs(column - center), column)
+    return abs(column - center), column
 
 
 center_first = combine_orderings(center_preference)
 """Center-only ordering, retained as a simple baseline for comparisons."""
+
+four_gain_center_first = combine_orderings(
+    four_gain_first,
+    center_preference,
+)
+"""Cheap tactical ordering: create fours first, then prefer the center."""
+
+threat_center_first = combine_orderings(
+    fewer_opponent_four_chances,
+    center_preference,
+)
+"""Threat-focused ordering: limit replies first, then prefer the center."""
 
 tactical_center_first = combine_orderings(
     four_gain_first,
@@ -90,4 +100,35 @@ tactical_center_first = combine_orderings(
     center_preference,
 )
 """Default ordering: score gain, opponent threat reduction, then center."""
+
+#builds an index that answers: “Which connect-four windows include this cell?”
+#@lru_cache decorator saves the result for each board size and connect length
+#Since those dimensions don’t change during a game, the next call can reuse the index instead of rebuilding it.
+@lru_cache(maxsize=None)
+def _windows_by_cell(rows: int, cols: int, connect_length: int) -> dict:
+    index: dict = {}
+
+    #gets all the possible windows from build_windows
+    for window in build_windows(rows, cols, connect_length):
+
+        #for each cell in each window, it records that window under the cell’s (row, column) coordinate.
+        for cell in window:
+            index.setdefault(cell, []).append(window)
+    return {cell: tuple(windows) for cell, windows in index.items()}
+
+
+#counts how many four-cell windows a player would complete by dropping a disc in column.
+def _four_gain(board, column: int, owner, connect_length: int) -> int:
+
+    #Finds the drop’s landing cell
+    landing = (board.lowest_empty_row(column), column)
+
+    #get only the windows containing that cell
+    affected = _windows_by_cell(board.rows, board.cols, connect_length).get(landing, ())
+
+    #For each window, checks whether all its other cells already belong to owner
+    #1. Counts the windows that meet that condition.
+    return sum(
+        all(board.cell(row, col).owner is owner for row, col in window if (row, col) != landing) for window in affected
+    )
 
